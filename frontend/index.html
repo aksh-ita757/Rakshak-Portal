@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rakshak Portal - Digital Police & Citizen Service Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header Styles */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 15px 0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .logo-icon {
+            font-size: 2em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-menu li a {
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: 600;
+            padding: 10px 15px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-menu li a:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            min-height: calc(100vh - 80px);
+            padding: 40px 0;
+        }
+
+        .page {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            padding: 40px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Home Page */
+        .hero {
+            text-align: center;
+            padding: 60px 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 20px;
+            margin-bottom: 40px;
+        }
+
+        .hero h1 {
+            font-size: 3.5em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .hero-subtitle {
+            font-size: 1.3em;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        .hero-cta {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .service-card {
+            background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+            border-radius: 15px;
+            padding: 30px;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .service-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .service-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* Forms */
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ff;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        select.form-control {
+            cursor: pointer;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 30px;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            border-radius: 15px;
+            padding: 30px 0;
+            color: white;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar-menu li {
+            margin: 5px 0;
+        }
+
+        .sidebar-menu li a {
+            display: block;
+            padding: 15px 30px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-menu li a:hover,
+        .sidebar-menu li a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: #667eea;
+        }
+
+        .dashboard-content {
+            padding: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        /* Tables */
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e1e8ff;
+        }
+
+        tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-closed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Login Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        /* Emergency Features */
+        .emergency-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            font-size: 2em;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
+            z-index: 999;
+            transition: all 0.3s ease;
+        }
+
+        .emergency-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.6);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .nav-menu {
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .hero h1 {
+                font-size: 2.5em;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                order: 2;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Alert Styles */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🛡️</span>
+                    <span>Rakshak Portal</span>
+                </div>
+                
+                <nav>
+                    <ul class="nav-menu">
+                        <li><a href="#" onclick="showPage('home')">Home</a></li>
+                        <li><a href="#" onclick="showPage('services')">Services</a></li>
+                        <li><a href="#" onclick="showPage('fir')">File FIR</a></li>
+                        <li><a href="#" onclick="showPage('complaint')">Complaints</a></li>
+                        <li><a href="#" onclick="showPage('track')">Track Status</a></li>
+                    </ul>
+                </nav>
+
+                <div class="auth-buttons">
+                    <a href="#" class="btn btn-secondary" onclick="showLoginModal('citizen')">Citizen Login</a>
+                    <a href="#" class="btn btn-primary" onclick="showLoginModal('admin')">Admin Login</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            
+            <!-- Home Page -->
+            <div id="home" class="page active">
+                <div class="hero">
+                    <h1>Rakshak Portal</h1>
+                    <p class="hero-subtitle">Digital Police & Citizen Service Platform</p>
+                    <p style="font-size: 1.1em; color: #666; margin-bottom: 30px;">Ensuring Safety, Justice & Transparency</p>
+                    <div class="hero-cta">
+                        <a href="#" class="btn btn-primary" onclick="showPage('fir')">File FIR Online</a>
+                        <a href="#" class="btn btn-secondary" onclick="showPage('services')">Explore Services</a>
+                    </div>
+                </div>
+
+                <div class="services-grid">
+                    <div class="service-card">
+                        <div class="service-icon">📋</div>
+                        <h3 class="service-title">Online FIR</h3>
+                        <p>File and track your FIR online with real-time status updates and digital documentation.</p>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-icon">💬</div>
+                        <h3 class="service-title">Complaints</h3>
+                        <p>Submit complaints and grievances with transparent tracking and resolution status.</p>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-icon">🚨</div>
+                        <h3 class="service-title">Emergency Services</h3>
+                        <p>Quick access to emergency reporting and SOS alerts for immediate assistance.</p>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-icon">📄</div>
+                        <h3 class="service-title">Certificates</h3>
+                        <p>Apply for police verification, character certificates, and NOCs online.</p>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-icon">🔍</div>
+                        <h3 class="service-title">Lost & Found</h3>
+                        <p>Report lost items and search for found property in our comprehensive database.</p>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-icon">💡</div>
+                        <h3 class="service-title">Anonymous Tips</h3>
+                        <p>Share anonymous tips and information to help maintain community safety.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services Page -->
+            <div id="services" class="page">
+                <h2 style="text-align: center; margin-bottom: 40px; color: #2c3e50;">Our Services</h2>
+                
+                <div class="services-grid">
+                    <div class="service-card">
+                        <h4>👥 Citizen Services</h4>
+                        <ul style="margin-top: 15px; color: #666;">
+                            <li>FIR Filing & Tracking</li>
+                            <li>Complaint Management</li>
+                            <li>Certificate Requests</li>
+                            <li>Traffic Challan Payment</li>
+                            <li>Lost Property Reports</li>
+                        </ul>
+                    </div>
+                    <div class="service-card">
+                        <h4>🚨 Emergency Services</h4>
+                        <ul style="margin-top: 15px; color: #666;">
+                            <li>SOS Emergency Alerts</li>
+                            <li>Cybercrime Reporting</li>
+                            <li>Harassment Complaints</li>
+                            <li>Violence Reporting</li>
+                            <li>Emergency Contacts</li>
+                        </ul>
+                    </div>
+                    <div class="service-card">
+                        <h4>📋 Administrative</h4>
+                        <ul style="margin-top: 15px; color: #666;">
+                            <li>Police Verification</li>
+                            <li>Character Certificates</li>
+                            <li>No Objection Certificates</li>
+                            <li>Tenant Verification</li>
+                            <li>Event Permissions</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FIR Filing Page -->
+            <div id="fir" class="page">
+                <h2 style="text-align: center; margin-bottom: 40px; color: #2c3e50;">File FIR Online</h2>
+                
+                <div class="form-container">
+                    <form id="firForm" onsubmit="submitFIR(event)">
+                        <div class="form-group">
+                            <label>Complainant Name *</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Mobile Number *</label>
+                            <input type="tel" class="form-control" name="mobile" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" class="form-control" name="email">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Address *</label>
+                            <textarea class="form-control" name="address" required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Type of Crime *</label>
+                            <select class="form-control" name="crimeType" required>
+                                <option value="">Select Crime Type</option>
+                                <option value="theft">Theft</option>
+                                <option value="fraud">Fraud</option>
+                                <option value="cybercrime">Cybercrime</option>
+                                <option value="assault">Assault</option>
+                                <option value="harassment">Harassment</option>
+                                <option value="others">Others</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Incident Details *</label>
+                            <textarea class="form-control" name="details" placeholder="Please provide detailed information about the incident..." required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Date of Incident *</label>
+                            <input type="date" class="form-control" name="incidentDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Location of Incident *</label>
+                            <input type="text" class="form-control" name="location" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+                            Submit FIR
+                        </button>
+                    </form>
+                    
+                    <div id="firAlert" class="alert"></div>
+                    <div id="firLoading" class="loading">
+                        <div class="spinner"></div>
+                        <p>Submitting your FIR...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Complaint Page -->
+            <div id="complaint" class="page">
+                <h2 style="text-align: center; margin-bottom: 40px; color: #2c3e50;">Lodge Complaint</h2>
+                
+                <div class="form-container">
+                    <form id="complaintForm" onsubmit="submitComplaint(event)">
+                        <div class="form-group">
+                            <label>Your Name *</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Contact Number *</label>
+                            <input type="tel" class="form-control" name="contact" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Complaint Type *</label>
+                            <select class="form-control" name="type" required>
+                                <option value="">Select Complaint Type</option>
+                                <option value="police-misconduct">Police Misconduct</option>
+                                <option value="service-delay">Service Delay</option>
+                                <option value="corruption">Corruption</option>
+                                <option value="facility-issue">Facility Issue</option>
+                                <option value="others">Others</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Complaint Details *</label>
+                            <textarea class="form-control" name="details" required></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+                            Submit Complaint
+                        </button>
+                    </form>
+                    
+                    <div id="complaintAlert" class="alert"></div>
+                </div>
+            </div>
+
+            <!-- Track Status Page -->
+            <div id="track" class="page">
+                <h2 style="text-align: center; margin-bottom: 40px; color: #2c3e50;">Track Status</h2>
+                
+                <div class="form-container">
+                    <div class="form-group">
+                        <label>Enter Reference Number</label>
+                        <input type="text" class="form-control" id="trackingNumber" placeholder="Enter FIR/Complaint Number">
+                    </div>
+                    
+                    <button onclick="trackStatus()" class="btn btn-primary" style="width: 100%;">
+                        Track Status
+                    </button>
+                    
+                    <div id="trackingResult" style="margin-top: 30px;"></div>
+                </div>
+            </div>
+
+            <!-- Admin Dashboard -->
+            <div id="adminDashboard" class="page">
+                <h2 style="margin-bottom: 30px; color: #2c3e50;">Admin Dashboard</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">156</div>
+                        <div class="stat-label">Total FIRs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">89</div>
+                        <div class="stat-label">Active Cases</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">34</div>
+                        <div class="stat-label">Pending Complaints</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">12</div>
+                        <div class="stat-label">Emergency Alerts</div>
+                    </div>
+                </div>
+
+                <div class="dashboard">
+                    <div class="sidebar">
+                        <ul class="sidebar-menu">
+                            <li><a href="#" class="active" onclick="showDashboardSection('overview')">Overview</a></li>
+                            <li><a href="#" onclick="showDashboardSection('firs')">FIR Management</a></li>
+                            <li><a href="#" onclick="showDashboardSection('complaints')">Complaints</a></li>
+                            <li><a href="#" onclick="showDashboardSection('officers')">Officers</a></li>
+                            <li><a href="#" onclick="showDashboardSection('analytics')">Analytics</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="dashboard-content">
+                        <div id="dashboardOverview" class="dashboard-section active">
+                            <h3>Recent FIRs</h3>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>FIR No.</th>
+                                            <th>Complainant</th>
+                                            <th>Type</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="firTableBody">
+                                        <!-- Data will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeLoginModal()">&times;</span>
+            <h3 id="modalTitle" style="text-align: center; margin-bottom: 30px;">Login</h3>
+            
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Username/Email</label>
+                    <input type="text" class="form-control" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" name="password" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    Login
+                </button>
+            </form>
+            
+            <div id="loginAlert" class="alert"></div>
+        </div>
+    </div>
+
+    <!-- Emergency Button -->
+    <button class="emergency-button" onclick="showEmergencyAlert()" title="Emergency SOS">
+        🚨
+    </button>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let firCounter = 1001;
+        let complaintCounter = 2001;
+        let firsDatabase = [];
+        let complaintsDatabase = [];
+
+        // Sample data
+        const sampleFirs = [
+            { id: 'FIR001', name: 'John Doe', type: 'Theft', date: '2024-01-15', status: 'Active' },
+            { id: 'FIR002', name: 'Jane Smith', type: 'Fraud', date: '2024-01-14', status: 'Pending' },
+            { id: 'FIR003', name: 'Mike Johnson', type: 'Cybercrime', date: '2024-01-13', status: 'Closed' }
+        ];
+
+        // Initialize application
+        function initApp() {
+            firsDatabase = [...sampleFirs];
+            populateFirTable();
+            showPage('home');
+        }
+
+        // Page navigation
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show selected page
+            document.getElementById(pageId).classList.add('active');
+            
+            // Update navigation
+            document.querySelectorAll('.nav-menu a').forEach(link => {
+                link.classList.remove('active');
+            });
+        }
+
+        // Login modal functions
+        function showLoginModal(userType) {
+            const modal = document.getElementById('loginModal');
+            const title = document.getElementById('modalTitle');
+            title.textContent = userType === 'admin' ? 'Admin Login' : 'Citizen Login';
+            modal.classList.add('active');
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('loginForm').reset();
+            hideAlert('loginAlert');
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const username = formData.get('username');
+            const password = formData.get('password');
+            
+            // Simple authentication (in real app, this would be server-side)
+            if (username === 'admin' && password === 'admin123') {
+                currentUser = { type: 'admin', name: 'Admin User' };
+                closeLoginModal();
+                showPage('adminDashboard');
+                updateAuthButtons();
+                showAlert('loginAlert', 'Login successful!', 'success');
+            } else if (username === 'citizen' && password === 'citizen123') {
+                currentUser = { type: 'citizen', name: 'Citizen User' };
+                closeLoginModal();
+                updateAuthButtons();
+                showAlert('loginAlert', 'Login successful!', 'success');
+            } else {
+                showAlert('loginAlert', 'Invalid credentials. Try admin/admin123 or citizen/citizen123', 'error');
+            }
+        }
+
+        function updateAuthButtons() {
+            const authButtons = document.querySelector('.auth-buttons');
+            if (currentUser) {
+                authButtons.innerHTML = `
+                    <span style="color: #667eea; font-weight: 600;">Welcome, ${currentUser.name}</span>
+                    <button class="btn btn-secondary" onclick="logout()">Logout</button>
+                `;
+            } else {
+                authButtons.innerHTML = `
+                    <a href="#" class="btn btn-secondary" onclick="showLoginModal('citizen')">Citizen Login</a>
+                    <a href="#" class="btn btn-primary" onclick="showLoginModal('admin')">Admin Login</a>
+                `;
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            updateAuthButtons();
+            showPage('home');
+        }
+
+        // FIR submission
+        function submitFIR(event) {
+            event.preventDefault();
+            
+            if (!currentUser) {
+                showAlert('firAlert', 'Please login first to file an FIR.', 'error');
+                return;
+            }
+            
+            showLoading('firLoading');
+            
+            setTimeout(() => {
+                const formData = new FormData(event.target);
+                const firId = 'FIR' + String(firCounter++).padStart(3, '0');
+                
+                const firData = {
+                    id: firId,
+                    name: formData.get('name'),
+                    mobile: formData.get('mobile'),
+                    email: formData.get('email'),
+                    address: formData.get('address'),
+                    type: formData.get('crimeType'),
+                    details: formData.get('details'),
+                    date: formData.get('incidentDate'),
+                    location: formData.get('location'),
+                    status: 'Pending',
+                    submittedOn: new Date().toISOString().split('T')[0]
+                };
+                
+                firsDatabase.push(firData);
+                hideLoading('firLoading');
+                showAlert('firAlert', `FIR submitted successfully! Your FIR Number is: ${firId}`, 'success');
+                event.target.reset();
+                populateFirTable();
+            }, 2000);
+        }
+
+        // Complaint submission
+        function submitComplaint(event) {
+            event.preventDefault();
+            
+            if (!currentUser) {
+                showAlert('complaintAlert', 'Please login first to lodge a complaint.', 'error');
+                return;
+            }
+            
+            const formData = new FormData(event.target);
+            const complaintId = 'CMP' + String(complaintCounter++).padStart(3, '0');
+            
+            const complaintData = {
+                id: complaintId,
+                name: formData.get('name'),
+                contact: formData.get('contact'),
+                type: formData.get('type'),
+                details: formData.get('details'),
+                status: 'Pending',
+                submittedOn: new Date().toISOString().split('T')[0]
+            };
+            
+            complaintsDatabase.push(complaintData);
+            showAlert('complaintAlert', `Complaint submitted successfully! Your Complaint Number is: ${complaintId}`, 'success');
+            event.target.reset();
+        }
+
+        // Status tracking
+        function trackStatus() {
+            const trackingNumber = document.getElementById('trackingNumber').value.trim();
+            const resultDiv = document.getElementById('trackingResult');
+            
+            if (!trackingNumber) {
+                resultDiv.innerHTML = '<div class="alert alert-error">Please enter a reference number.</div>';
+                return;
+            }
+            
+            // Search in FIRs
+            const fir = firsDatabase.find(f => f.id === trackingNumber.toUpperCase());
+            if (fir) {
+                resultDiv.innerHTML = `
+                    <div class="service-card">
+                        <h4>FIR Status: ${fir.id}</h4>
+                        <p><strong>Type:</strong> ${fir.type}</p>
+                        <p><strong>Status:</strong> <span class="status status-${fir.status.toLowerCase()}">${fir.status}</span></p>
+                        <p><strong>Submitted:</strong> ${fir.submittedOn}</p>
+                        <p><strong>Location:</strong> ${fir.location}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Search in complaints
+            const complaint = complaintsDatabase.find(c => c.id === trackingNumber.toUpperCase());
+            if (complaint) {
+                resultDiv.innerHTML = `
+                    <div class="service-card">
+                        <h4>Complaint Status: ${complaint.id}</h4>
+                        <p><strong>Type:</strong> ${complaint.type}</p>
+                        <p><strong>Status:</strong> <span class="status status-${complaint.status.toLowerCase()}">${complaint.status}</span></p>
+                        <p><strong>Submitted:</strong> ${complaint.submittedOn}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="alert alert-error">No record found with this reference number.</div>';
+        }
+
+        // Admin dashboard functions
+        function showDashboardSection(sectionId) {
+            // Update sidebar active state
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            const content = document.querySelector('.dashboard-content');
+            
+            switch(sectionId) {
+                case 'overview':
+                    content.innerHTML = `
+                        <h3>Recent FIRs</h3>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>FIR No.</th>
+                                        <th>Complainant</th>
+                                        <th>Type</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="firTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    populateFirTable();
+                    break;
+                    
+                case 'firs':
+                    content.innerHTML = `
+                        <h3>FIR Management</h3>
+                        <div style="margin-bottom: 20px;">
+                            <button class="btn btn-primary" onclick="addNewFIR()">Add New FIR</button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>FIR No.</th>
+                                        <th>Complainant</th>
+                                        <th>Mobile</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="firManagementTable">
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    populateFirManagementTable();
+                    break;
+                    
+                case 'complaints':
+                    content.innerHTML = `
+                        <h3>Complaint Management</h3>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Complaint No.</th>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="complaintManagementTable">
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    populateComplaintTable();
+                    break;
+                    
+                case 'officers':
+                    content.innerHTML = `
+                        <h3>Officer Management</h3>
+                        <div class="services-grid">
+                            <div class="service-card">
+                                <h4>👮 Active Officers</h4>
+                                <div class="stat-number" style="color: #667eea;">45</div>
+                                <p>Currently on duty</p>
+                            </div>
+                            <div class="service-card">
+                                <h4>📊 Performance</h4>
+                                <div class="stat-number" style="color: #27ae60;">92%</div>
+                                <p>Cases resolved this month</p>
+                            </div>
+                            <div class="service-card">
+                                <h4>⏰ Response Time</h4>
+                                <div class="stat-number" style="color: #e74c3c;">15min</div>
+                                <p>Average response time</p>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'analytics':
+                    content.innerHTML = `
+                        <h3>Crime Analytics</h3>
+                        <div class="services-grid">
+                            <div class="service-card">
+                                <h4>📈 Crime Trends</h4>
+                                <p>Theft cases increased by 12% this month</p>
+                                <p>Cybercrime reports up 8%</p>
+                                <p>Overall crime rate down 5%</p>
+                            </div>
+                            <div class="service-card">
+                                <h4>🎯 Resolution Rate</h4>
+                                <div class="stat-number" style="color: #27ae60;">78%</div>
+                                <p>Cases resolved successfully</p>
+                            </div>
+                            <div class="service-card">
+                                <h4>⚡ Quick Stats</h4>
+                                <ul style="text-align: left; margin-top: 15px;">
+                                    <li>Emergency responses: 23</li>
+                                    <li>Anonymous tips: 45</li>
+                                    <li>Certificates issued: 156</li>
+                                    <li>Traffic violations: 89</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                    break;
+            }
+        }
+
+        function populateFirTable() {
+            const tbody = document.getElementById('firTableBody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = firsDatabase.map(fir => `
+                <tr>
+                    <td>${fir.id}</td>
+                    <td>${fir.name}</td>
+                    <td>${fir.type}</td>
+                    <td>${fir.submittedOn || fir.date}</td>
+                    <td><span class="status status-${fir.status.toLowerCase()}">${fir.status}</span></td>
+                    <td>
+                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8em;" onclick="updateFirStatus('${fir.id}')">Update</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function populateFirManagementTable() {
+            const tbody = document.getElementById('firManagementTable');
+            if (!tbody) return;
+            
+            tbody.innerHTML = firsDatabase.map(fir => `
+                <tr>
+                    <td>${fir.id}</td>
+                    <td>${fir.name}</td>
+                    <td>${fir.mobile || 'N/A'}</td>
+                    <td>${fir.type}</td>
+                    <td><span class="status status-${fir.status.toLowerCase()}">${fir.status}</span></td>
+                    <td>
+                        <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8em; margin-right: 5px;" onclick="viewFirDetails('${fir.id}')">View</button>
+                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8em;" onclick="updateFirStatus('${fir.id}')">Update</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function populateComplaintTable() {
+            const tbody = document.getElementById('complaintManagementTable');
+            if (!tbody) return;
+            
+            tbody.innerHTML = complaintsDatabase.map(complaint => `
+                <tr>
+                    <td>${complaint.id}</td>
+                    <td>${complaint.name}</td>
+                    <td>${complaint.type}</td>
+                    <td><span class="status status-${complaint.status.toLowerCase()}">${complaint.status}</span></td>
+                    <td>${complaint.submittedOn}</td>
+                    <td>
+                        <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8em; margin-right: 5px;" onclick="viewComplaintDetails('${complaint.id}')">View</button>
+                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8em;" onclick="updateComplaintStatus('${complaint.id}')">Update</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateFirStatus(firId) {
+            const fir = firsDatabase.find(f => f.id === firId);
+            if (fir) {
+                const newStatus = prompt('Enter new status (Pending/Active/Closed):', fir.status);
+                if (newStatus && ['Pending', 'Active', 'Closed'].includes(newStatus)) {
+                    fir.status = newStatus;
+                    populateFirTable();
+                    populateFirManagementTable();
+                }
+            }
+        }
+
+        function updateComplaintStatus(complaintId) {
+            const complaint = complaintsDatabase.find(c => c.id === complaintId);
+            if (complaint) {
+                const newStatus = prompt('Enter new status (Pending/Active/Closed):', complaint.status);
+                if (newStatus && ['Pending', 'Active', 'Closed'].includes(newStatus)) {
+                    complaint.status = newStatus;
+                    populateComplaintTable();
+                }
+            }
+        }
+
+        function viewFirDetails(firId) {
+            const fir = firsDatabase.find(f => f.id === firId);
+            if (fir) {
+                alert(`FIR Details:\n\nFIR No: ${fir.id}\nName: ${fir.name}\nType: ${fir.type}\nStatus: ${fir.status}\nLocation: ${fir.location || 'N/A'}\nDetails: ${fir.details || 'N/A'}`);
+            }
+        }
+
+        function viewComplaintDetails(complaintId) {
+            const complaint = complaintsDatabase.find(c => c.id === complaintId);
+            if (complaint) {
+                alert(`Complaint Details:\n\nComplaint No: ${complaint.id}\nName: ${complaint.name}\nType: ${complaint.type}\nStatus: ${complaint.status}\nDetails: ${complaint.details}`);
+            }
+        }
+
+        // Emergency SOS function
+        function showEmergencyAlert() {
+            if (confirm('🚨 EMERGENCY SOS 🚨\n\nThis will send an immediate alert to the nearest police station with your location.\n\nProceed?')) {
+                alert('🚨 Emergency alert sent successfully!\n\nNearest police station has been notified.\nHelp is on the way.\n\nEmergency Reference: EMG' + Date.now());
+            }
+        }
+
+        // Utility functions
+        function showAlert(alertId, message, type) {
+            const alert = document.getElementById(alertId);
+            alert.className = `alert alert-${type} show`;
+            alert.textContent = message;
+            
+            setTimeout(() => {
+                hideAlert(alertId);
+            }, 5000);
+        }
+
+        function hideAlert(alertId) {
+            const alert = document.getElementById(alertId);
+            alert.classList.remove('show');
+        }
+
+        function showLoading(loadingId) {
+            document.getElementById(loadingId).style.display = 'block';
+        }
+
+        function hideLoading(loadingId) {
+            document.getElementById(loadingId).style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('loginModal');
+            if (event.target === modal) {
+                closeLoginModal();
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initApp();
+        });
+    </script>
+</body>
+</html>
