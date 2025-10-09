@@ -1,0 +1,877 @@
+const express = require('express');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const mysql = require('mysql2/promise');
+
+const app = express();
+const PORT = 5000;
+const JWT_SECRET = 'rakshak_secret_2024_thunderbolts';
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Database Connection
+const pool = mysql.createPool({
+  host: 'localhost',
+  user: 'root',
+  password: '', // CHANGE THIS to your MySQL password
+  database: 'rakshak_portal',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
+// Test DB Connection
+pool.getConnection()
+  .then(conn => {
+    console.log('✅ Database connected successfully');
+    conn.release();
+  })
+  .catch(err => {
+    console.error('❌ Database connection failed:', err.message);
+    console.error('Make sure MySQL is running and database exists!');
+  });
+
+// ============================================
+// AUTHENTICATION MIDDLEWARE
+// ============================================
+
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Access denied. Please login first.' 
+    });
+  }
+
+  try {
+    const user = jwt.verify(token, JWT_SECRET);
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.status(403).json({ 
+      success: false, 
+      error: 'Invalid or expired token' 
+    });
+  }
+};
+
+// Role-based authorization
+const authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Access denied. Insufficient permissions.' 
+      });
+    }
+    next();
+  };
+};
+
+// ============================================
+// AUTHENTICATION ROUTES
+// ============================================
+
+// Register New User
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, email, password, fullName, mobile, role = 'citizen' } = req.body;
+
+    // Validation
+    if (!username || !email || !password || !fullName || !mobile) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'All fields are required' 
+      });
+    }
+
+    // Check if user already exists
+    const [existing] = await pool.query(
+      'SELECT * FROM users WHERE email = ? OR username = ?',
+      [email, username]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'User with this email or username already exists' 
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert user
+    const [result] = await pool.query(
+      'INSERT INTO users (username, email, password, full_name, mobile, role) VALUES (?, ?, ?, ?, ?, ?)',
+      [username, email, hashedPassword, fullName, mobile, role]
+    );
+
+    // Create audit log
+    await pool.query(
+      'INSERT INTO audit_logs (user_id, action, details) VALUES (?, ?, ?)',
+      [result.insertId, 'USER_REGISTERED', `New ${role} registered: ${username}`]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Registration successful! Please login.',
+      userId: result.insertId
+    });
+
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Registration failed. Please try again.' 
+    });
+  }
+});
+
+// Login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Username and password are required' 
+      });
+    }
+
+    // Find user
+    const [users] = await pool.query(
+      'SELECT * FROM users WHERE username = ? OR email = ?',
+      [username, username]
+    );
+
+    if (users.length === 0) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid username or password' 
+      });
+    }
+
+    const user = users[0];
+
+    // Check if account is active
+    if (!user.is_active) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Your account has been deactivated' 
+      });
+    }
+
+    // Verify password
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid username or password' 
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        username: user.username, 
+        role: user.role 
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Update last login
+    await pool.query(
+      'UPDATE users SET last_login = NOW() WHERE id = ?',
+      [user.id]
+    );
+
+    // Create audit log
+    await pool.query(
+      'INSERT INTO audit_logs (user_id, action, details) VALUES (?, ?, ?)',
+      [user.id, 'USER_LOGIN', `User ${username} logged in successfully`]
+    );
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        fullName: user.full_name,
+        mobile: user.mobile,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Login failed. Please try again.' 
+    });
+  }
+});
+
+// Get Current User Info
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+  try {
+    const [users] = await pool.query(
+      'SELECT id, username, email, full_name, mobile, role, created_at FROM users WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      user: users[0] 
+    });
+
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch user info' 
+    });
+  }
+});
+
+// ============================================
+// FIR ROUTES
+// ============================================
+
+// Create FIR
+app.post('/api/firs', authenticateToken, async (req, res) => {
+  const connection = await pool.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+
+    const {
+      complainantName,
+      mobile,
+      email,
+      address,
+      crimeType,
+      details,
+      incidentDate,
+      location
+    } = req.body;
+
+    // Generate FIR number
+    const [lastFir] = await connection.query(
+      'SELECT fir_number FROM firs ORDER BY id DESC LIMIT 1'
+    );
+    
+    let firNumber = 'FIR1001';
+    if (lastFir.length > 0) {
+      const lastNum = parseInt(lastFir[0].fir_number.replace('FIR', ''));
+      firNumber = `FIR${lastNum + 1}`;
+    }
+
+    // Insert FIR
+    const [result] = await connection.query(
+      `INSERT INTO firs (fir_number, user_id, complainant_name, mobile, email, 
+       address, crime_type, incident_details, incident_date, location, status) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`,
+      [firNumber, req.user.id, complainantName, mobile, email, address, 
+       crimeType, details, incidentDate, location]
+    );
+
+    // Create notification for user
+    await connection.query(
+      'INSERT INTO notifications (user_id, type, message) VALUES (?, ?, ?)',
+      [req.user.id, 'FIR_SUBMITTED', `Your FIR ${firNumber} has been submitted successfully`]
+    );
+
+    // Notify all officers
+    await connection.query(
+      `INSERT INTO notifications (user_id, type, message)
+       SELECT id, 'NEW_FIR', ? FROM users WHERE role IN ('admin', 'officer')`,
+      [`New FIR ${firNumber} submitted - ${crimeType}`]
+    );
+
+    // Audit log
+    await connection.query(
+      'INSERT INTO audit_logs (user_id, action, details) VALUES (?, ?, ?)',
+      [req.user.id, 'FIR_CREATED', `FIR ${firNumber} created for ${crimeType}`]
+    );
+
+    await connection.commit();
+
+    res.status(201).json({
+      success: true,
+      message: 'FIR submitted successfully',
+      data: {
+        firNumber,
+        firId: result.insertId,
+        status: 'Pending'
+      }
+    });
+
+  } catch (error) {
+    await connection.rollback();
+    console.error('Create FIR error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to submit FIR' 
+    });
+  } finally {
+    connection.release();
+  }
+});
+
+// Get All FIRs (with filters)
+app.get('/api/firs', authenticateToken, async (req, res) => {
+  try {
+    const { status, crimeType, search, page = 1, limit = 20 } = req.query;
+    
+    let query = 'SELECT * FROM firs WHERE 1=1';
+    const params = [];
+
+    // Role-based filtering
+    if (req.user.role === 'citizen') {
+      query += ' AND user_id = ?';
+      params.push(req.user.id);
+    }
+
+    // Apply filters
+    if (status) {
+      query += ' AND status = ?';
+      params.push(status);
+    }
+
+    if (crimeType) {
+      query += ' AND crime_type = ?';
+      params.push(crimeType);
+    }
+
+    if (search) {
+      query += ' AND (fir_number LIKE ? OR complainant_name LIKE ? OR location LIKE ?)';
+      const searchPattern = `%${search}%`;
+      params.push(searchPattern, searchPattern, searchPattern);
+    }
+
+    // Get total count
+    const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as total');
+    const [countResult] = await pool.query(countQuery, params);
+    const total = countResult[0].total;
+
+    // Add pagination
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    params.push(parseInt(limit), offset);
+
+    // Execute query
+    const [firs] = await pool.query(query, params);
+
+    res.json({
+      success: true,
+      data: firs,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        totalRecords: total,
+        recordsPerPage: parseInt(limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Get FIRs error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch FIRs' 
+    });
+  }
+});
+
+// Get Single FIR
+app.get('/api/firs/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [firs] = await pool.query(
+      'SELECT * FROM firs WHERE id = ? OR fir_number = ?',
+      [id, id]
+    );
+
+    if (firs.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'FIR not found' 
+      });
+    }
+
+    const fir = firs[0];
+
+    // Check permissions
+    if (req.user.role === 'citizen' && fir.user_id !== req.user.id) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Access denied' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      data: fir 
+    });
+
+  } catch (error) {
+    console.error('Get FIR error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch FIR' 
+    });
+  }
+});
+
+// Update FIR Status (Admin/Officer only)
+app.patch('/api/firs/:id', authenticateToken, authorizeRoles('admin', 'officer'), async (req, res) => {
+  const connection = await pool.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+
+    const { id } = req.params;
+    const { status, notes, assignedOfficer } = req.body;
+
+    // Get FIR details
+    const [firs] = await connection.query(
+      'SELECT * FROM firs WHERE id = ? OR fir_number = ?',
+      [id, id]
+    );
+
+    if (firs.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ 
+        success: false, 
+        error: 'FIR not found' 
+      });
+    }
+
+    const fir = firs[0];
+
+    // Update FIR
+    await connection.query(
+      'UPDATE firs SET status = ?, notes = ?, assigned_officer = ?, updated_at = NOW() WHERE id = ?',
+      [status, notes, assignedOfficer, fir.id]
+    );
+
+    // Create case update
+    await connection.query(
+      'INSERT INTO case_updates (fir_id, updated_by, update_type, description) VALUES (?, ?, ?, ?)',
+      [fir.id, req.user.id, 'STATUS_CHANGE', `Status changed to ${status}`]
+    );
+
+    // Notify user
+    await connection.query(
+      'INSERT INTO notifications (user_id, type, message) VALUES (?, ?, ?)',
+      [fir.user_id, 'FIR_UPDATED', `Your FIR ${fir.fir_number} status has been updated to: ${status}`]
+    );
+
+    // Audit log
+    await connection.query(
+      'INSERT INTO audit_logs (user_id, action, details) VALUES (?, ?, ?)',
+      [req.user.id, 'FIR_UPDATED', `FIR ${fir.fir_number} updated to ${status}`]
+    );
+
+    await connection.commit();
+
+    res.json({ 
+      success: true, 
+      message: 'FIR updated successfully' 
+    });
+
+  } catch (error) {
+    await connection.rollback();
+    console.error('Update FIR error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to update FIR' 
+    });
+  } finally {
+    connection.release();
+  }
+});
+
+// ============================================
+// COMPLAINT ROUTES
+// ============================================
+
+// Create Complaint
+app.post('/api/complaints', authenticateToken, async (req, res) => {
+  const connection = await pool.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+
+    const { name, contact, type, details } = req.body;
+
+    // Generate complaint number
+    const [lastComplaint] = await connection.query(
+      'SELECT complaint_number FROM complaints ORDER BY id DESC LIMIT 1'
+    );
+    
+    let complaintNumber = 'CMP2001';
+    if (lastComplaint.length > 0) {
+      const lastNum = parseInt(lastComplaint[0].complaint_number.replace('CMP', ''));
+      complaintNumber = `CMP${lastNum + 1}`;
+    }
+
+    // Insert complaint
+    const [result] = await connection.query(
+      `INSERT INTO complaints (complaint_number, user_id, complainant_name, contact, 
+       complaint_type, details, status) VALUES (?, ?, ?, ?, ?, ?, 'Pending')`,
+      [complaintNumber, req.user.id, name, contact, type, details]
+    );
+
+    // Create notification
+    await connection.query(
+      'INSERT INTO notifications (user_id, type, message) VALUES (?, ?, ?)',
+      [req.user.id, 'COMPLAINT_SUBMITTED', `Your complaint ${complaintNumber} has been submitted`]
+    );
+
+    // Audit log
+    await connection.query(
+      'INSERT INTO audit_logs (user_id, action, details) VALUES (?, ?, ?)',
+      [req.user.id, 'COMPLAINT_CREATED', `Complaint ${complaintNumber} created`]
+    );
+
+    await connection.commit();
+
+    res.status(201).json({
+      success: true,
+      message: 'Complaint submitted successfully',
+      data: {
+        complaintNumber,
+        complaintId: result.insertId
+      }
+    });
+
+  } catch (error) {
+    await connection.rollback();
+    console.error('Create complaint error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to submit complaint' 
+    });
+  } finally {
+    connection.release();
+  }
+});
+
+// Get All Complaints
+app.get('/api/complaints', authenticateToken, async (req, res) => {
+  try {
+    let query = 'SELECT * FROM complaints';
+    const params = [];
+
+    if (req.user.role === 'citizen') {
+      query += ' WHERE user_id = ?';
+      params.push(req.user.id);
+    }
+
+    query += ' ORDER BY created_at DESC';
+
+    const [complaints] = await pool.query(query, params);
+
+    res.json({ 
+      success: true, 
+      data: complaints 
+    });
+
+  } catch (error) {
+    console.error('Get complaints error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch complaints' 
+    });
+  }
+});
+
+// Update Complaint
+app.patch('/api/complaints/:id', authenticateToken, authorizeRoles('admin', 'officer'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, resolution } = req.body;
+
+    const [result] = await pool.query(
+      'UPDATE complaints SET status = ?, resolution = ?, updated_at = NOW() WHERE id = ? OR complaint_number = ?',
+      [status, resolution, id, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Complaint not found' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Complaint updated successfully' 
+    });
+
+  } catch (error) {
+    console.error('Update complaint error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to update complaint' 
+    });
+  }
+});
+
+// ============================================
+// DASHBOARD STATS
+// ============================================
+
+app.get('/api/dashboard/stats', authenticateToken, authorizeRoles('admin', 'officer'), async (req, res) => {
+  try {
+    const [[firStats]] = await pool.query(
+      'SELECT COUNT(*) as total, SUM(CASE WHEN status = "Active" THEN 1 ELSE 0 END) as active FROM firs'
+    );
+
+    const [[complaintStats]] = await pool.query(
+      'SELECT COUNT(*) as total, SUM(CASE WHEN status = "Pending" THEN 1 ELSE 0 END) as pending FROM complaints'
+    );
+
+    const [[emergencyStats]] = await pool.query(
+      'SELECT COUNT(*) as total FROM emergency_alerts WHERE status = "Active"'
+    );
+
+    res.json({
+      success: true,
+      data: {
+        totalFirs: firStats.total || 0,
+        activeFirs: firStats.active || 0,
+        totalComplaints: complaintStats.total || 0,
+        pendingComplaints: complaintStats.pending || 0,
+        emergencyAlerts: emergencyStats.total || 0
+      }
+    });
+
+  } catch (error) {
+    console.error('Dashboard stats error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch stats' 
+    });
+  }
+});
+
+// ============================================
+// EMERGENCY ROUTES
+// ============================================
+
+app.post('/api/emergency', authenticateToken, async (req, res) => {
+  const connection = await pool.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+
+    const { latitude, longitude, details } = req.body;
+    const emergencyNumber = `EMG${Date.now()}`;
+
+    await connection.query(
+      `INSERT INTO emergency_alerts (alert_number, user_id, latitude, longitude, details, status) 
+       VALUES (?, ?, ?, ?, ?, 'Active')`,
+      [emergencyNumber, req.user.id, latitude, longitude, details]
+    );
+
+    // Notify all officers
+    await connection.query(
+      `INSERT INTO notifications (user_id, type, message) 
+       SELECT id, 'EMERGENCY_ALERT', ? FROM users WHERE role IN ('admin', 'officer')`,
+      [`🚨 EMERGENCY: ${emergencyNumber} - Immediate response required`]
+    );
+
+    await connection.commit();
+
+    res.status(201).json({
+      success: true,
+      message: 'Emergency alert sent successfully',
+      data: { emergencyNumber }
+    });
+
+  } catch (error) {
+    await connection.rollback();
+    console.error('Emergency alert error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to send emergency alert' 
+    });
+  } finally {
+    connection.release();
+  }
+});
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+app.get('/api/notifications', authenticateToken, async (req, res) => {
+  try {
+    const [notifications] = await pool.query(
+      'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20',
+      [req.user.id]
+    );
+
+    res.json({ 
+      success: true, 
+      data: notifications 
+    });
+
+  } catch (error) {
+    console.error('Get notifications error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch notifications' 
+    });
+  }
+});
+
+app.patch('/api/notifications/:id/read', authenticateToken, async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE notifications SET is_read = TRUE WHERE id = ? AND user_id = ?',
+      [req.params.id, req.user.id]
+    );
+
+    res.json({ 
+      success: true, 
+      message: 'Notification marked as read' 
+    });
+
+  } catch (error) {
+    console.error('Update notification error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to update notification' 
+    });
+  }
+});
+
+// ============================================
+// TRACKING
+// ============================================
+
+app.get('/api/track/:referenceNumber', async (req, res) => {
+  try {
+    const { referenceNumber } = req.params;
+    const ref = referenceNumber.toUpperCase();
+
+    // Search in FIRs
+    const [firs] = await pool.query(
+      'SELECT * FROM firs WHERE fir_number = ?',
+      [ref]
+    );
+
+    if (firs.length > 0) {
+      return res.json({
+        success: true,
+        type: 'FIR',
+        data: firs[0]
+      });
+    }
+
+    // Search in Complaints
+    const [complaints] = await pool.query(
+      'SELECT * FROM complaints WHERE complaint_number = ?',
+      [ref]
+    );
+
+    if (complaints.length > 0) {
+      return res.json({
+        success: true,
+        type: 'COMPLAINT',
+        data: complaints[0]
+      });
+    }
+
+    res.status(404).json({
+      success: false,
+      error: 'No record found with this reference number'
+    });
+
+  } catch (error) {
+    console.error('Track error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to track status' 
+    });
+  }
+});
+
+// ============================================
+// HEALTH CHECK
+// ============================================
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Rakshak Portal API is running',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  });
+});
+
+// ============================================
+// START SERVER
+// ============================================
+
+app.listen(PORT, () => {
+  console.log(`
+╔════════════════════════════════════════════════╗
+║   🛡️  RAKSHAK PORTAL - BACKEND SERVER       ║
+╠════════════════════════════════════════════════╣
+║   Team: Thunderbolts                           ║
+║   Developer: Akshita Bhardwaj                  ║
+║   Port: ${PORT}                                    ║
+║   API: http://localhost:${PORT}/api                ║
+║   Status: ✅ RUNNING                           ║
+╚════════════════════════════════════════════════╝
+
+📋 Available Endpoints:
+   POST   /api/auth/register     - Register new user
+   POST   /api/auth/login        - User login
+   GET    /api/auth/me           - Get current user
+   
+   POST   /api/firs              - Create FIR
+   GET    /api/firs              - Get all FIRs
+   GET    /api/firs/:id          - Get single FIR
+   PATCH  /api/firs/:id          - Update FIR
+   
+   POST   /api/complaints        - Create complaint
+   GET    /api/complaints        - Get all complaints
+   PATCH  /api/complaints/:id    - Update complaint
+   
+   GET    /api/dashboard/stats   - Dashboard statistics
+   POST   /api/emergency         - Emergency alert
+   GET    /api/notifications     - Get notifications
+   GET    /api/track/:ref        - Track FIR/Complaint
+   GET    /api/health            - Health check
+
+🔐 Test Credentials:
+   Admin:   admin / admin123
+   Citizen: citizen / citizen123
+  `);
+});
